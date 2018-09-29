@@ -1,0 +1,105 @@
+---
+version: '3.5'
+
+services:
+
+  drone-server:
+    image: "${DRONE_SERVER_IMAGE:-dockerregistry.serviceurl.in/drone/drone}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - traefik_public
+      - drone
+    configs:
+      - source: server-env
+        target: /.env
+    volumes:
+      - drone-server-data:/var/lib/drone/
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      replicas: 1
+      labels:
+        - "traefik.backend=drone-server"
+        - "traefik.frontend.rule=Host:drone.serviceurl.in"
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=8000"
+        - "traefik.docker.network=traefik_public"
+        - "traefik.enable=true"
+      endpoint_mode: dnsrr
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        order: start-first
+        monitor: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  drone-agent:
+    image: "${DRONE_AGENT_IMAGE:-dockerregistry.serviceurl.in/drone/agent}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: agent
+    networks:
+      - drone
+    depends_on:
+      - drone-server
+    configs:
+      - source: agent-env
+        target: /.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints:
+          - node.role!=manager	
+        preferences:
+          - spread: node.labels.ci=drone
+      replicas: 3
+      mode: replicated
+      update_config:
+        parallelism: 2
+        delay: 10s
+        failure_action: pause
+        order: start-first
+        monitor: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+networks:
+  drone:
+    driver: overlay
+    attachable: true
+  traefik_public:
+    external: true
+    driver: overlay
+   
+configs:
+  server-env:
+    file: ./.server-env
+  agent-env:
+    file: ./.agent-env
+
+# see https://github.com/drone/drone/issues/2223
+#secrets:
+#  drone-secret:
+#    file: ./awesome-secret
+
+volumes:
+  drone-server-data:
+    external: true

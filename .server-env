@@ -1,0 +1,18 @@
+DRONE_DEBUG=true
+DRONE_SECRET=changeit
+DRONE_HOST=https://drone.serviceurl.in
+DRONE_PLUGIN_PULL=true
+DRONE_OPEN=true
+DRONE_ADMIN=prateek_goel
+
+# you need to create an OAuth App at: https://github.com/settings/developers
+DRONE_BITBUCKET=true
+DRONE_BITBUCKET_CLIENT=xpQWT4G9MDKbPdWtj4
+DRONE_BITBUCKET_SECRET=qXpmT7VfCAC8JxrXNaCMxudph7Bwg5qZ
+DRONE_ESCALATE=plugins/docker,plugins/gcr,plugins/ecr,dockerregistry.serviceurl.in/plugins/docker,dockerregistry.serviceurl.in/plugins/drone-ssh
+DRONE_DATABASE_DRIVER=mysql
+DRONE_DATABASE_DATASOURCE=drone:password@tcp(172.30.51.47:3306)/drone?parseTime=true
+
+HTTP_PROXY=172.30.155.180:3128
+HTTPS_PROXY=172.30.155.180:3128
+
